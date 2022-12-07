@@ -1,0 +1,22 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": [
+		"qxq",
+		"xix",
+		"qxq"
+	],
+	"key": {
+		"x": {
+			"tag": "forge:ingots/iron"
+		},
+		"i": {
+			"item": "goodportals:portal_controller_core"
+		},
+		"q": {
+			"tag": "forge:gems/diamond"
+		}
+	},
+	"result": {
+		"item": "goodportals:portal_controller"
+	}
+}

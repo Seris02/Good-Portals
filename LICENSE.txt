@@ -1,3 +1,6 @@
+NOTICE: THIS LICENSE DOES NOT APPLY TO THE FILES NAMED "BlockEntityRenderDelegate.java" AND "PortalBakedModel.java".
+SEE THOSE FILES FOR THEIR CORRESPONDING LICENSES.
+
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 

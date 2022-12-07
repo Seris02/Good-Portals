@@ -1,0 +1,19 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": [
+		" x ",
+		"xix",
+		" x "
+	],
+	"key": {
+		"x": {
+			"tag": "forge:ingots/gold"
+		},
+		"i": {
+			"tag": "forge:storage_blocks/iron"
+		}
+	},
+	"result": {
+		"item": "goodportals:portal_controller_core"
+	}
+}
