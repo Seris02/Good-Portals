@@ -35,7 +35,8 @@ public class PortalInfoPacket {
 		SPECIFIC_PLAYER_CHANGE,
 		AXIS_FLIP,
 		CHANGE_RENDER_PLAYERS,
-		ONLY_TELEPORT_ME
+		ONLY_TELEPORT_ME,
+		IS_LIGHT_SOURCE
 	}
 	private BlockPos pos;
 	private ResourceKey<Level> dim;
@@ -87,6 +88,12 @@ public class PortalInfoPacket {
 		p.way = way;
 		return p;
 	}
+	
+	public static PortalInfoPacket setIsLightSourcePacket(String ID, boolean way) {
+		PortalInfoPacket p = new PortalInfoPacket(null, null, ID, ToDo.IS_LIGHT_SOURCE);
+		p.way = way;
+		return p;
+	}
 
 	public static void encode(PortalInfoPacket message, FriendlyByteBuf buf) {
 		buf.writeEnum(message.todo);
@@ -98,6 +105,7 @@ public class PortalInfoPacket {
 				case SPECIFIC_PLAYER_CHANGE:
 				case CHANGE_RENDER_PLAYERS:
 				case ONLY_TELEPORT_ME:
+				case IS_LIGHT_SOURCE:
 					buf.writeBoolean(message.way);
 					return;
 				default:
@@ -125,6 +133,7 @@ public class PortalInfoPacket {
 				case SPECIFIC_PLAYER_CHANGE:
 				case CHANGE_RENDER_PLAYERS:
 				case ONLY_TELEPORT_ME:
+				case IS_LIGHT_SOURCE:
 					message.way = buf.readBoolean();
 					return message;
 				default:
@@ -165,6 +174,9 @@ public class PortalInfoPacket {
 					break;
 				case ONLY_TELEPORT_ME:
 					PortalStorage.get().setOnlyTeleportSelf(message.name, ctx.get().getSender(), message.way);
+					break;
+				case IS_LIGHT_SOURCE:
+					PortalStorage.get().setIsLightSource(message.name, ctx.get().getSender(), message.way);
 					break;
 				case AXIS_FLIP:
 					PortalControllerEntity pe = PortalStorage.get().getDataWithPos(message.pos, message.dim).getControllerEntity();

@@ -31,6 +31,7 @@ import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.server.packs.repository.RepositorySource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -42,6 +43,7 @@ import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.world.BlockEvent.BreakEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -75,11 +77,10 @@ public class GoodPortals {
 		PortalContent.register(modBus);
 		//Mod.EventBusSubscriber.Bus.MOD
 		DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> {
-            modBus.addListener(this::clientSetup);
             modBus.addListener(this::initPortalRenderers);
 		});
 		MinecraftForge.EVENT_BUS.addListener(this::onPlayerLoggedInEvent);
-		MinecraftForge.EVENT_BUS.addListener(this::onPlayerLeftClickBlock);
+		//MinecraftForge.EVENT_BUS.addListener(this::onPlayerLeftClickBlock);
 		// Register the setup method for modloading
 		FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
 		
@@ -106,25 +107,35 @@ public class GoodPortals {
 		GoodPortals.channel.registerMessage(3, SingleDataStorageRefresh.class, SingleDataStorageRefresh::encode, SingleDataStorageRefresh::decode, SingleDataStorageRefresh::onMessage);
 	}
 	
-	@OnlyIn(Dist.CLIENT)
-	 public void clientSetup(FMLClientSetupEvent clientSetupEvent) {
-		 //ItemBlockRenderTypes.setRenderLayer(PortalContent.PORTAL_BLOCK.get(), type -> true);
-	 }
-	
 	public void onPlayerLoggedInEvent(PlayerLoggedInEvent event) {
 		ServerPlayer s = (ServerPlayer) event.getPlayer();
 		PortalStorage.get().syncToPlayer(s);
 	}
-	
+	/*
 	public void onPlayerLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
 		Level l = event.getWorld();
 		if (l.getBlockEntity(event.getPos()) instanceof PortalBlockEntity pe) {
 			if (pe.controllerPos != null) {
 				DataStorage e = PortalStorage.get().getDataWithPos(pe.controllerPos, l.dimension());
-				if (e != null && !e.canPlayerAccess(event.getPlayer())) {
+				DataStorage r = e == null ? null : PortalStorage.get().getDataWithID(e.inUse);
+				if ((e != null && !e.canPlayerAccessNoNull(event.getPlayer())) || (r != null && !r.canPlayerAccessNoNull(event.getPlayer()))) {
+					System.out.println(event.getPlayer());
 					event.setCanceled(true);
 				}
 			}
 		}
 	}
+	public void onBreakEvent(BreakEvent event) {
+		LevelAccessor l = event.getWorld();
+		if (l.getBlockEntity(event.getPos()) instanceof PortalBlockEntity pe) {
+			if (pe.controllerPos != null) {
+				DataStorage e = PortalStorage.get().getDataWithPos(pe.controllerPos, pe.getLevel().dimension());
+				DataStorage r = e == null ? null : PortalStorage.get().getDataWithID(e.inUse);
+				if ((e != null && !e.canPlayerAccess(event.getPlayer())) || (r != null && !r.canPlayerAccess(event.getPlayer()))) {
+					System.out.println(event.getPlayer());
+					event.setCanceled(true);
+				}
+			}
+		}
+	}*/
 }

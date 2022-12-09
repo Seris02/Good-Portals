@@ -52,7 +52,7 @@ public class ClientHandler {
 
 		for (Block block : camoBlocks.orElse(null)) {
 			for (BlockState state : block.getStateDefinition().getPossibleStates()) {
-				registerDisguisedModel(modelRegistry, PortalBakedModel::new, state);
+				registerCamoModel(modelRegistry, PortalBakedModel::new, state);
 				
 			}
 		}
@@ -68,7 +68,7 @@ public class ClientHandler {
 		return ForgeRegistries.BLOCKS.getKey(block);
 	}
 	
-	private static void registerDisguisedModel(Map<ResourceLocation, BakedModel> modelRegistry, Function<BakedModel, BakedModel> creator, BlockState state) {
+	private static void registerCamoModel(Map<ResourceLocation, BakedModel> modelRegistry, Function<BakedModel, BakedModel> creator, BlockState state) {
 		modelRegistry.put(BlockModelShaper.stateToModelLocation(state), creator.apply(modelRegistry.get(BlockModelShaper.stateToModelLocation(state))));
 	}
 }

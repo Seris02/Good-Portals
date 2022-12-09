@@ -88,6 +88,7 @@ public class PortalStorageScreen extends Screen implements StorageEmittee {
 	public Button playerChange;
 	public Button teleportself;
 	public Button renderplayers;
+	public Button isLightSource;
 
 	public PortalStorageScreen(LocalPlayer player, BlockPos pos, PortalControllerEntity controller) {
 		super(new TextComponent("Portal Controller Screen"));
@@ -133,6 +134,7 @@ public class PortalStorageScreen extends Screen implements StorageEmittee {
 		});
 		deleteButton = new Button(this.renameButton.x + this.renameButton.getWidth() + 5, this.addName.y, 50, 20, new TextComponent("Delete"), (button) -> {
 			if (areyousure) {
+				unsure();
 				PortalUtils.sendToServer(PortalInfoPacket.removePortalPacket(mine.ID, true));
 			} else {
 				areyousure = true;
@@ -147,12 +149,12 @@ public class PortalStorageScreen extends Screen implements StorageEmittee {
 		this.addRenderableWidget(deleteButton);
 		scrollUp = new ScrollButton(relX + 5 + 210, (relY+7), 20, 20, new TextComponent(""), true, (button) -> {
 			unsure();
-			scroll = Math.max(0, scroll - (player.isShiftKeyDown() ? 5 : 1));
+			scroll = Math.max(0, scroll - (hasShiftDown() ? 5 : 1));
 			refreshPortalButtons();
 		});
 		scrollDown = new ScrollButton(relX + 5 + 210, relY+207, 20, 20, new TextComponent(""), false, (button) -> {
 			unsure();
-			scroll = Math.min(scroll + (player.isShiftKeyDown() ? 5 : 1), data.size() - 11);
+			scroll = Math.min(scroll + (hasShiftDown() ? 5 : 1), data.size() - 11);
 			refreshPortalButtons();
 		});
 		this.addRenderableWidget(scrollUp);
@@ -179,11 +181,16 @@ public class PortalStorageScreen extends Screen implements StorageEmittee {
 			unsure();
 			PortalUtils.sendToServer(PortalInfoPacket.onlyTeleportSelfPacket(mine.ID, !mine.onlyTeleportSelf));
 		});
+		isLightSource = new Button(relX + startx, (relY+7 + 50), widthrighthand, 20, new TextComponent("Lit Up"), (button) -> {
+			unsure();
+			PortalUtils.sendToServer(PortalInfoPacket.setIsLightSourcePacket(mine.ID, !mine.isLightSource));
+		});
 		rightSideButtons.add(playerChange);
 		rightSideButtons.add(teleportself);
 		rightSideButtons.add(axis1);
 		rightSideButtons.add(axis2);
 		rightSideButtons.add(renderplayers);
+		rightSideButtons.add(isLightSource);
 		rightSideButtons.forEach((button) -> this.addRenderableWidget(button));
 		refreshPortals();
 	}
@@ -192,6 +199,7 @@ public class PortalStorageScreen extends Screen implements StorageEmittee {
 		areyousure = false;
 		TextComponent d = new TextComponent("Delete");
 		d.setStyle(Style.EMPTY);
+		deleteButton.setMessage(d);
 	}
 	
 	private void disOrAbleScroll() {
@@ -280,6 +288,7 @@ public class PortalStorageScreen extends Screen implements StorageEmittee {
 				e.setStyle(Style.EMPTY.withStrikethrough(true));
 			}
 			this.renderplayers.setMessage(e);
+			this.isLightSource.setMessage(new TextComponent(mine.isLightSource ? "Lit up" : "Unlit"));
 		}
 		int h = 0;
 		int relY = (this.height - this.imageHeight) / 2;
@@ -292,7 +301,6 @@ public class PortalStorageScreen extends Screen implements StorageEmittee {
 	}
 	
 	private void refreshPortals() {
-		scroll = 0;
 		PortalStorage e = PortalStorage.get();
 		data = e.getMatchingFramesFromBlockPos(pos, dimension, player);
 		mine = e.getDataWithPos(pos, dimension);

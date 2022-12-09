@@ -38,22 +38,11 @@ public class PortalController extends PortalBlock {
 	
 	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		if (level.isClientSide && player.getItemInHand(hand).isEmpty()) {
-			//GoodPortals.channel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new OpenPortalScreenPacket(pos, level.dimension()));
 			ClientLevel world = (ClientLevel) level;
 			if (level.getBlockEntity(pos) instanceof PortalControllerEntity pe) {
 				openPortalScreen(pos, pe);
 			}
 		}
-		/*if (player.getItemInHand(hand).isEmpty()) {
-			if (!level.isClientSide) {
-				PortalControllerEntity en = (PortalControllerEntity) level.getBlockEntity(pos);
-				LinkedPortal p = en.getPortal();
-				if (p != null) {
-					p.flipPortalAlongAxis();
-				}
-				return InteractionResult.SUCCESS;
-			}
-		}*/
 		return super.use(state, level, pos, player, hand, hit);
 	}
 	@OnlyIn(Dist.CLIENT)

@@ -3,6 +3,8 @@ package com.seris02.goodportals.storage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -27,8 +29,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraftforge.event.entity.living.BabyEntitySpawnEvent;
 import net.minecraftforge.server.ServerLifecycleHooks;
 import qouteall.imm_ptl.core.api.PortalAPI;
+import qouteall.imm_ptl.core.portal.PortalExtension;
 import qouteall.imm_ptl.core.portal.PortalManipulation;
 import qouteall.imm_ptl.core.portal.custom_portal_gen.PortalGenInfo;
 import qouteall.imm_ptl.core.portal.custom_portal_gen.form.DiligentMatcher;
@@ -68,12 +72,22 @@ public class PortalStorage extends SavedData {
 	public static PortalStorage get() {
 		return PortalStorage.get(null);
 	}
-
+	public void debug() {
+		for (DataStorage d : data) {
+			System.out.println(d.name);
+			System.out.println(d.shape.axis.name());
+			System.out.println(PortalUtils.getCheapTagFromShape(d.shape).toString());
+		}
+	}
 	@Override
 	public CompoundTag save(CompoundTag tag) {
+		return save(tag, false);
+	}
+	
+	public CompoundTag save(CompoundTag tag, boolean forClient) {
 		ListTag t = new ListTag();
 		for (DataStorage d : data) {
-			t.add(d.save());
+			t.add(d.save(forClient));
 		}
 		tag.put("data", t);
 		return tag;
@@ -96,14 +110,34 @@ public class PortalStorage extends SavedData {
 	
 	public void syncToPlayer(ServerPlayer player) {
 		if (PortalUtils.isRunningOnClient()) {return;}
-		PortalStorageRefresh psr = new PortalStorageRefresh(save(new CompoundTag()));
+		PortalStorageRefresh psr = new PortalStorageRefresh(save(new CompoundTag(), true));
 		PortalUtils.sendToPlayer(psr, player);
 	}
 	
-	public void syncSpecificVarToPlayers(Var type, DataStorage storage) {
+	public void syncSpecificVarToPlayers(Var type, DataStorage storage, LinkedPortal specific) {
 		if (PortalUtils.isRunningOnClient()) {return;}
-		SingleDataStorageRefresh s = new SingleDataStorageRefresh(storage.ID, type, storage);
+		SingleDataStorageRefresh s = new SingleDataStorageRefresh(storage.ID, type, storage, specific);
 		ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers().forEach(player -> PortalUtils.sendToPlayer(s, player));
+	}
+	
+	public boolean doesPlayerHaveAccessToBoth(String ID, Player player) {
+		DataStorage e = this.getDataWithID(ID);
+		if (e == null) return true;
+		DataStorage r = this.getDataWithID(e.inUse);
+		if ((e != null && !e.canPlayerAccess(player)) || (r != null && !r.canPlayerAccess(player))) {
+			return false;
+		}
+		return true;
+	}
+	
+	public boolean doesPlayerHaveAccessToBoth(BlockPos pos, ResourceKey<Level> dimension, Player player) {
+		DataStorage e = this.getDataWithPos(pos, dimension);
+		if (e == null) return true;
+		DataStorage r = this.getDataWithID(e.inUse);
+		if ((e != null && !e.canPlayerAccess(player)) || (r != null && !r.canPlayerAccess(player))) {
+			return false;
+		}
+		return true;
 	}
 	
 	public void renamePortal(BlockPos controllerPos, ResourceKey<Level> dimension, String name, ServerPlayer player) {
@@ -111,7 +145,7 @@ public class PortalStorage extends SavedData {
 		DataStorage x = this.getDataWithPos(controllerPos, dimension);
 		if (x == null || !x.canPlayerAccess(player)) {return;}
 		x.name = name;
-		syncSpecificVarToPlayers(Var.NAME, x);
+		syncSpecificVarToPlayers(Var.NAME, x, null);
 		setDirty(true);
 	}
 	
@@ -140,9 +174,13 @@ public class PortalStorage extends SavedData {
 	
 	private void removePortal(BlockPos controllerPos, ResourceKey<Level> dimension, LinkedPortal portal, boolean removeData) {
 		if (PortalUtils.isRunningOnClient()) {return;}
+		DataStorage d = null;
 		if (portal != null) {
-			if (portal.isRemoved()) {
-				return;
+			for (DataStorage da : data) {
+				da.refreshPortal();
+				if (da.portal == portal) {
+					d = da;
+				}
 			}
 			controllerPos = portal.controllerPos;
 			dimension = portal.getOriginDim();
@@ -150,30 +188,32 @@ public class PortalStorage extends SavedData {
 		if (controllerPos == null || dimension == null) {
 			return;
 		}
+		d = d == null ? this.getDataWithPos(controllerPos, dimension) : d;
+		if (d == null) return;
 		ServerLevel level = PortalUtils.getServerLevelFromDimensionKey(dimension);
-		boolean remove = removeData ||  (PortalUtils.findPortalShape(level, controllerPos) == null);
-		DataStorage d = this.getDataWithPos(controllerPos, dimension);
-		if (d == null) {return;}
-		if (portal == null) {
-			if (level.getBlockEntity(controllerPos) instanceof PortalControllerEntity pe) {
-				if (pe.getPortal() != null) {
-					pe.removePortal();
-				}
-			}
-		} else {
+		boolean remove = removeData ||  (PortalUtils.findPortalShape(level, controllerPos, d.dir) == null);
+		if (d.portal == null) d.refreshPortal();
+		if (d.portal != null) {
+			d.portal.alreadyInformed = true;
+			d.portal.makeWay();
+		} else if (portal != null && !portal.isRemoved()) {
+			portal.alreadyInformed = true;
 			portal.makeWay();
 		}
 		if (remove) {
+			if (level.getBlockEntity(controllerPos) instanceof PortalControllerEntity pe) {
+				pe.removePortal(false);
+			}
 			removeData(d.ID);
 			syncToPlayers();
 		} else {
 			DataStorage da = getDataWithID(d.inUse);
 			if (da != null) {
 				da.inUse = "";
-				syncSpecificVarToPlayers(DataStorage.Var.IN_USE, da);
+				syncSpecificVarToPlayers(DataStorage.Var.IN_USE, da, null);
 			}
 			d.inUse = "";
-			syncSpecificVarToPlayers(DataStorage.Var.IN_USE, d);
+			syncSpecificVarToPlayers(DataStorage.Var.IN_USE, d, null);
 		}
 		setDirty(true);
 	}
@@ -188,66 +228,43 @@ public class PortalStorage extends SavedData {
 	}
 	
 	public void setToPlayer(String ID, ServerPlayer player, boolean on) {
-		if (PortalUtils.isRunningOnClient()) {return;}
-		DataStorage e = this.getDataWithID(ID);
-		if (e == null) return;
-		if (!e.canPlayerAccess(player)) {
-			return; //no.
-		}
-		DataStorage r = this.getDataWithID(e.inUse);
-		if (r != null && !r.canPlayerAccess(player)) {
-			return;
-		}
-		e.specific_player = on ? player.getScoreboardName() : "";
-		if (!e.inUse.isBlank()) {
-			PortalControllerEntity pe = e.getControllerEntity();
-			if (pe != null) {
-				if (pe.getPortal() != null) {
-					pe.getPortal().setToPlayer(e.specific_player);
-				}
-			}
-		}
-		this.syncSpecificVarToPlayers(Var.SPECIFIC_PLAYER, e);
-		setDirty(true);
+		this.setBooleanVarAndUpdate(ID, player, Var.SPECIFIC_PLAYER, true, (e) -> {
+			e.specific_player = e.specific_player.isBlank() ? player.getScoreboardName() : "";
+		}, (d, p) -> p.setToPlayer(d.specific_player));
 	}
 	
 	public void setRenderSelf(String ID, ServerPlayer player, boolean renderPlayers) {
-		if (PortalUtils.isRunningOnClient()) {return;}
-		DataStorage e = this.getDataWithID(ID);
-		if (e == null) return;
-		if (!e.canPlayerAccess(player)) {
-			return; //no.
-		}
-		e.renderPlayers = renderPlayers;
-		if (!e.inUse.isBlank()) {
-			PortalControllerEntity pe = e.getControllerEntity();
-			if (pe != null) {
-				if (pe.getPortal() != null) {
-					pe.getPortal().setdoRenderPlayer(renderPlayers);
-				}
-			}
-		}
-		this.syncSpecificVarToPlayers(Var.RENDER_PLAYER, e);
-		setDirty(true);
+		this.setBooleanVarAndUpdate(ID, player, Var.RENDER_PLAYER, false, (e) -> e.renderPlayers = renderPlayers, (d, p) -> p.setdoRenderPlayer(renderPlayers));
 	}
 	
 	public void setOnlyTeleportSelf(String ID, ServerPlayer player, boolean teleportSelf) {
+		this.setBooleanVarAndUpdate(ID, player, Var.ONLY_TELEPORT_SELF, false, (e) -> e.onlyTeleportSelf = teleportSelf, (d, p) -> p.setToTeleportSelf(teleportSelf));
+	}
+	
+	public void setIsLightSource(String ID, ServerPlayer player, boolean isLightSource) {
+		this.setBooleanVarAndUpdate(ID, player, Var.IS_LIGHT_SOURCE, true, (e) -> e.isLightSource = isLightSource, (d, p) -> p.setLightSource(isLightSource));
+	}
+	
+	public void setBooleanVarAndUpdate(String ID, ServerPlayer player, Var type, boolean checkOtherPortalAccess, Consumer<DataStorage> d, BiConsumer<DataStorage, LinkedPortal> p) {
 		if (PortalUtils.isRunningOnClient()) {return;}
 		DataStorage e = this.getDataWithID(ID);
 		if (e == null) return;
 		if (!e.canPlayerAccess(player)) {
 			return; //no.
 		}
-		e.onlyTeleportSelf = teleportSelf;
-		if (!e.inUse.isBlank()) {
-			PortalControllerEntity pe = e.getControllerEntity();
-			if (pe != null) {
-				if (pe.getPortal() != null) {
-					pe.getPortal().setToTeleportSelf(teleportSelf);
-				}
+		if (checkOtherPortalAccess) {
+			DataStorage r = this.getDataWithID(e.inUse);
+			if (r != null && !r.canPlayerAccess(player)) {
+				return;
 			}
 		}
-		this.syncSpecificVarToPlayers(Var.ONLY_TELEPORT_SELF, e);
+		LinkedPortal pa = null;
+		d.accept(e);
+		if (!e.inUse.isBlank()) {
+			pa = e.getPortal();
+			p.accept(e, pa);
+		}
+		this.syncSpecificVarToPlayers(type, e, pa);
 		setDirty(true);
 	}
 	
@@ -259,14 +276,13 @@ public class PortalStorage extends SavedData {
 		if (this.getDataWithPos(controllerPos, dimension) != null) {return false;}
 		ServerLevel level = PortalUtils.getServerLevelFromDimensionKey(dimension);
 		if (level.getBlockState(controllerPos).getBlock() != PortalContent.PORTAL_CONTROLLER.get()) {return false;}
-		BlockPortalShape shape = PortalUtils.findPortalShape(level, controllerPos);
-		if (shape == null) {return false;}
-		DataStorage d = new DataStorage(shape, controllerPos, dimension, name);
-		for (DataStorage toMatch : getMatchingPortalFrames(shape, dimension)) {
+		DataStorage d = PortalUtils.findDataStorage(level, controllerPos, name, data);
+		if (d == null) {return false;}
+		for (DataStorage toMatch : getMatchingPortalFrames(d.shape, dimension)) {
 			d.addMatch(toMatch);
 		}
 		if (level.getBlockEntity(controllerPos) instanceof PortalControllerEntity pe) {
-			pe.setControllerForAll(shape);
+			pe.setControllerForAll(d.shape);
 		}
 		data.add(d);
 		syncToPlayers();
@@ -285,26 +301,45 @@ public class PortalStorage extends SavedData {
 		List<DiligentMatcher.TransformedShape> matchable = DiligentMatcher.getMatchableShapeVariants(shape, 20);
 		BlockPos.MutableBlockPos temp2 = new BlockPos.MutableBlockPos();
 		ServerLevel world = PortalUtils.getServerLevelFromDimensionKey(dimension);
-		for (DataStorage d : data) {
-			ServerLevel world2 = PortalUtils.getServerLevelFromDimensionKey(d.dimension);
-			for (BlockPos a : d.shape.frameAreaWithoutCorner) {
-				for (DiligentMatcher.TransformedShape matchableShapeVariant : matchable) {
-					if (matchableShapeVariant.scale != 1) continue;
-					BlockPortalShape template = matchableShapeVariant.transformedShape;
-					BlockPortalShape matched = template.matchShapeWithMovedFirstFramePos(
-							posx -> air.test(world2.getBlockState(posx)),
-							posx -> frame.test(world2.getBlockState(posx)),
-							a,
-							temp2
-							);
-					if (matched != null) {
-						if (world != world2 || !shape.anchor.equals(matched.anchor)) {
-							(d.inUse.isBlank() ? list : inUse).add(d);
+		boolean w = true;
+		k:
+			if (w) {
+				for (int c = 0; c < data.size(); c++) {
+					DataStorage d = data.get(c);
+					if (!this.checkFrame(d.ID)) {
+						continue;
+					}
+					if (d.shape.area.size() != shape.area.size()) {
+						continue;
+					}
+					ServerLevel world2 = PortalUtils.getServerLevelFromDimensionKey(d.dimension);
+					for (BlockPos a : d.shape.frameAreaWithoutCorner) {
+						for (DiligentMatcher.TransformedShape matchableShapeVariant : matchable) {
+							if (matchableShapeVariant.scale != 1) continue;
+							BlockPortalShape template = matchableShapeVariant.transformedShape;
+							BlockPortalShape matched = template.matchShapeWithMovedFirstFramePos(
+									posx -> air.test(world2.getBlockState(posx)),
+									posx -> frame.test(world2.getBlockState(posx)),
+									a,
+									temp2
+									);
+							if (matched != null) {
+								if (world != world2 || !shape.anchor.equals(matched.anchor)) {
+									(d.inUse.isBlank() ? list : inUse).add(d);
+									for (String y : d.matching) {
+										DataStorage e = this.getDataWithID(y);
+										if (e != null) {
+											(e.inUse.isBlank() ? list : inUse).add(e);
+										}
+									}
+									w = false;
+									break k;
+								}
+							}
 						}
 					}
 				}
 			}
-		}
 		list.addAll(inUse);
 		inUse.clear();
 		return list;
@@ -383,17 +418,18 @@ public class PortalStorage extends SavedData {
 	public boolean checkFrame(String ID) {
 		DataStorage e = this.getDataWithID(ID);
 		if (e != null) {
-			return checkFrame(e.controllerPos, e.dimension);
+			return checkFrameFromPortalBlock(e.controllerPos, e.dimension);
 		}
 		return false;
 	}
 	
-	public boolean checkFrame(BlockPos pos, ResourceKey<Level> dimension) {
+	public boolean checkFrameFromPortalBlock(BlockPos pos, ResourceKey<Level> dimension) {
 		if (PortalUtils.isRunningOnClient()) {return false;}
-		if (this.getDataWithPos(pos, dimension) == null) {return false;}
+		DataStorage s = this.getDataWithPos(pos, dimension);
+		if (s == null) {return false;} //make it remove the controllerpos?
 		ServerLevel level = PortalUtils.getServerLevelFromDimensionKey(dimension);
-		if (level.getBlockState(pos).getBlock() != PortalContent.PORTAL_CONTROLLER.get() || PortalUtils.findPortalShape(level, pos) == null) {
-			this.removePortal(pos, dimension, true);
+		if (level.getBlockState(s.controllerPos).getBlock() != PortalContent.PORTAL_CONTROLLER.get() || PortalUtils.findPortalShape(level, s.controllerPos, s.dir) == null) {
+			this.removePortal(s.controllerPos, dimension, true);
 			return false;
 		}
 		return true;
@@ -487,7 +523,6 @@ public class PortalStorage extends SavedData {
 					return;
 				}
 				pe2 = (PortalControllerEntity) world2.getBlockEntity(ae);
-				System.out.println(pe.getClass().toString());
 				if (pe2.getPortal() != null) {
 					removePortals(p,be,ce,de);
 					return;
@@ -515,7 +550,7 @@ public class PortalStorage extends SavedData {
 			ce.specificPlayer = b.specific_player;
 			de.specificPlayer = b.specific_player;
 		}
-
+		PortalExtension.get(p).bindCluster = true;
 		p.blockPortalShape = a.shape;
 		be.blockPortalShape = a.shape;
 		ce.blockPortalShape = b.shape;
@@ -531,10 +566,23 @@ public class PortalStorage extends SavedData {
 		PortalAPI.spawnServerEntity(ce);
 		PortalAPI.spawnServerEntity(de);
 		
+		p.isLightSource = a.isLightSource;
+		ce.isLightSource = b.isLightSource;
+		p.createOrDestroyPlaceholders();
+		ce.createOrDestroyPlaceholders();
+		
 		a.inUse = b.ID;
 		b.inUse = a.ID;
-		syncSpecificVarToPlayers(Var.IN_USE, a);
-		syncSpecificVarToPlayers(Var.IN_USE, b);
+		a.portalUUID = p.getUUID();
+		b.portalUUID = ce.getUUID();
+		a.portal = p;
+		b.portal = ce;
+		a.matching.remove(IDb);
+		a.matching.add(0, IDb);
+		b.matching.remove(IDa);
+		b.matching.add(0, IDa);
+		syncSpecificVarToPlayers(Var.IN_USE, a, null);
+		syncSpecificVarToPlayers(Var.IN_USE, b, null);
 		setDirty(true);
 	}
 	

@@ -6,6 +6,7 @@ import com.seris02.goodportals.datagen.PortalContent;
 import com.seris02.goodportals.storage.PortalStorage;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.Connection;
@@ -21,6 +22,7 @@ public class PortalBlockEntity extends BlockEntity {
 	
 	public BlockState camoState;
 	public BlockPos controllerPos;
+	public Direction.Axis axis;
 
 	public PortalBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -45,12 +47,15 @@ public class PortalBlockEntity extends BlockEntity {
 		if (controllerPos != null) {
 			nbt.put("cpos", NbtUtils.writeBlockPos(controllerPos));
 		}
+		nbt.putInt("e", axis == Direction.Axis.X  ? 1 : (axis == Direction.Axis.Y ? 2 : 3));
 	}
 	
 	@Override
 	public void load(CompoundTag nbt) {
 		super.load(nbt);
 		this.camoState = NbtUtils.readBlockState(nbt.getCompound("camo"));
+		int a = nbt.getInt("e");
+		axis = a == 1  ? Direction.Axis.X : (a == 2 ? Direction.Axis.Y : Direction.Axis.Z);
 		if (!nbt.getBoolean("a")) {
 			this.controllerPos = NbtUtils.readBlockPos(nbt.getCompound("cpos"));
 		}
@@ -87,25 +92,20 @@ public class PortalBlockEntity extends BlockEntity {
 	
 	public void notifyPortal() {
 		if (controllerPos != null && !level.isClientSide) {
-			PortalControllerEntity a = (PortalControllerEntity) level.getBlockEntity(controllerPos);
-			if (a != null) {
+			if (level.getBlockEntity(controllerPos) instanceof PortalControllerEntity a) {
 				LinkedPortal p = a.getPortal();
 				if (p != null) {
 					p.notifyPlaceholderUpdate();
 				}
 			}
-			PortalStorage.get(level).checkFrame(controllerPos, level.dimension());
+			PortalStorage.get(level).checkFrameFromPortalBlock(controllerPos, level.dimension());
 		}
 	}
 	
-	public void removePortal() {
+	public void removePortal(boolean keepData) {
 		if (controllerPos != null && !level.isClientSide) {
-			PortalControllerEntity a = (PortalControllerEntity) level.getBlockEntity(controllerPos);
-			if (a != null) {
-				LinkedPortal p = a.getPortal();
-				if (p != null) {
-					p.markShouldBreak();
-				}
+			if (level.getBlockEntity(controllerPos) instanceof PortalControllerEntity a) {
+				a.removePortal(true);
 			}
 		}
 	}

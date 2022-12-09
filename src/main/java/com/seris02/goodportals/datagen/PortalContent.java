@@ -41,7 +41,7 @@ public class PortalContent {
 	public static final RegistryObject<Block> PORTAL_BLOCK = registerBlock("portal_block", () -> new PortalBlock(Block.Properties.of(Material.METAL).sound(SoundType.METAL).strength(0.75f, 1200f)));
 	
 	public static final RegistryObject<Item> PORTAL_CONTROLLER_CORE = ITEMS.register("portal_controller_core", () -> new Item(itemProp(CreativeModeTab.TAB_MISC)));
-	
+
 	public static final RegistryObject<EntityType<LinkedPortal>> LINKED_PORTAL =
 			ENTITY_TYPES.register("linked_portal",
 					() -> EntityType.Builder.of(LinkedPortal::new, MobCategory.MISC)
