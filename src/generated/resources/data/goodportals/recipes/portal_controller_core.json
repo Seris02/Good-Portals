@@ -1,9 +1,9 @@
 {
 	"type": "minecraft:crafting_shaped",
 	"pattern": [
-		" x ",
+		"qx ",
 		"xix",
-		" x "
+		" xq"
 	],
 	"key": {
 		"x": {
@@ -11,6 +11,9 @@
 		},
 		"i": {
 			"tag": "forge:storage_blocks/iron"
+		},
+		"q": {
+			"tag": "forge:storage_blocks/ender_pearls"
 		}
 	},
 	"result": {

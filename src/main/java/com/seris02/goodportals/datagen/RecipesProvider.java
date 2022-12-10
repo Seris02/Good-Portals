@@ -38,11 +38,12 @@ public class RecipesProvider extends RecipeProvider {
 			.unlockedBy("has_portal_controller", has(PortalContent.PORTAL_CONTROLLER_CORE.get()))
 			.save(consumer);
 		ShapedRecipeBuilder.shaped(PortalContent.PORTAL_CONTROLLER_CORE.get())
-			.pattern(" x ")
+			.pattern("qx ")
 			.pattern("xix")
-			.pattern(" x ")
+			.pattern(" xq")
 			.define('x', Tags.Items.INGOTS_GOLD)
 			.define('i', Tags.Items.STORAGE_BLOCKS_IRON)
+			.define('q', Tags.Items.ENDER_PEARLS)
 			.unlockedBy("has_gold", has(Tags.Items.INGOTS_GOLD))
 			.save(consumer);
 	}
