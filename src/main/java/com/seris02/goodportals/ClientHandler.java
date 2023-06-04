@@ -45,7 +45,6 @@ public class ClientHandler {
 	
 	public static void refreshModelData(BlockEntity be) {
 		BlockPos pos = be.getBlockPos();
-		System.out.println("debug: WE'RE HERE NOW");
 		ModelDataManager modelDataManager = new ModelDataManager(be.getLevel());
 		modelDataManager.requestRefresh(be);
 		Minecraft.getInstance().levelRenderer.setBlocksDirty(pos.getX(), pos.getY(), pos.getZ(), pos.getX(), pos.getY(), pos.getZ());

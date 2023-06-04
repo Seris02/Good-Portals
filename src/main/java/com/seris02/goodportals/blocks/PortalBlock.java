@@ -80,10 +80,8 @@ public class PortalBlock extends BaseEntityBlock {
 				}
 				en.camoState = blockItem.getBlock().defaultBlockState();
 				if (!level.isClientSide) {
-					System.out.println("debug: WE SENDING THE CAMO MESSAGE");
 					GoodPortals.channel.send(PacketDistributor.TRACKING_CHUNK.with(() -> level.getChunkAt(pos)), new RefreshCamoModel(pos, player.getItemInHand(hand)));
 				} else {
-					System.out.println("debug: WE PUTTING ON THE CAMO CLIENTSIDE");
 					ClientHandler.putCamoBeRenderer(en, blockItem.getBlock().defaultBlockState());
 					if (en.camoState.getLightEmission(level, pos) > 0) {
 						level.getChunkSource().getLightEngine().checkBlock(pos);
