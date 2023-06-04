@@ -57,7 +57,7 @@ public class LinkedPortal extends GeneralBreakablePortal {
 	
 	public LinkedPortal(EntityType<?> entityType, Level world) {
 		super(entityType, world);
-		this.doRenderPlayer = false;
+		this.doRenderPlayer = true;
 		this.hasCrossPortalCollision = false;
 		this.controllerPos = null;
 		//this.animation = new PortalAnimation(Curve.sine, 0, false);
