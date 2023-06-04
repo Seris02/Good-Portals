@@ -39,12 +39,13 @@ public class RefreshCamoModel {
 	public static void onMessage(RefreshCamoModel message, Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> {
 			PortalBlockEntity pe = (PortalBlockEntity) Minecraft.getInstance().level.getBlockEntity(message.pos);
-
+			System.out.println("debug: WE GOT THE CAMO MESSAGE");
 			if (pe != null) {
 				if (message.stack.getItem() instanceof BlockItem blockItem)
 				pe.camoState = blockItem.getBlock().defaultBlockState();
 
 				ClientHandler.refreshModelData(pe);
+				System.out.println("debug: IT IS NOT NULL");
 			}
 		});
 

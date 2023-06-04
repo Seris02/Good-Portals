@@ -39,12 +39,9 @@ import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AddPackFindersEvent;
 import net.minecraftforge.event.OnDatapackSyncEvent;
-import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
-import net.minecraftforge.event.world.BlockEvent.BreakEvent;
-import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
@@ -59,8 +56,8 @@ import net.minecraftforge.fml.event.lifecycle.InterModProcessEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
-import net.minecraftforge.resource.PathResourcePack;
 import qouteall.imm_ptl.core.render.PortalEntityRenderer;
+import net.minecraft.world.entity.player.Player;
 
 
 // The value here should match an entry in the META-INF/mods.toml file
@@ -108,7 +105,7 @@ public class GoodPortals {
 	}
 	
 	public void onPlayerLoggedInEvent(PlayerLoggedInEvent event) {
-		ServerPlayer s = (ServerPlayer) event.getPlayer();
+		ServerPlayer s = (ServerPlayer) event.getEntity();
 		PortalStorage.get().syncToPlayer(s);
 	}
 	/*

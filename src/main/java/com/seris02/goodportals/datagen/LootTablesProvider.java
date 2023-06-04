@@ -29,6 +29,7 @@ import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import net.minecraft.data.CachedOutput;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -61,7 +62,7 @@ public class LootTablesProvider extends LootTableProvider {
 	}
 	
 	@Override
-	public void run(HashCache cache) {
+	public void run(CachedOutput cache) {
 		addTables();
 
 		Map<ResourceLocation, LootTable> tables = new HashMap<>();
@@ -71,12 +72,12 @@ public class LootTablesProvider extends LootTableProvider {
 		writeTables(cache, tables);
 	}
 
-	private void writeTables(HashCache cache, Map<ResourceLocation, LootTable> tables) {
+	private void writeTables(CachedOutput cache, Map<ResourceLocation, LootTable> tables) {
 		Path outputFolder = this.generator.getOutputFolder();
 		tables.forEach((key, lootTable) -> {
 			Path path = outputFolder.resolve("data/" + key.getNamespace() + "/loot_tables/" + key.getPath() + ".json");
 			try {
-				DataProvider.save(GSON, cache, LootTables.serialize(lootTable), path);
+				DataProvider.saveStable(cache, LootTables.serialize(lootTable), path);
 			} catch (IOException e) {
 				LOGGER.error("Couldn't write loot table {}", path, e);
 			}
