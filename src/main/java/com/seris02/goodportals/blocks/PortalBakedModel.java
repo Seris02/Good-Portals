@@ -107,13 +107,13 @@ public class PortalBakedModel implements IDynamicBakedModel {
 			if (blockEntity.getBlockState().getBlock() instanceof PortalBlock portal) {
 				Optional<BlockState> camoState = portal.getCamoState(level, pos);
 				if (camoState.isPresent()) {
-					modelData.builder().with(CAMO_STATE, camoState.get());
+					modelData = modelData.builder().with(CAMO_STATE, camoState.get()).build();
 					return modelData;
 				}
 			}
 		}
 
-		modelData.builder().with(CAMO_STATE, Blocks.AIR.defaultBlockState());
+		modelData = modelData.builder().with(CAMO_STATE, Blocks.AIR.defaultBlockState()).build();
 		return modelData;
 	}
 
