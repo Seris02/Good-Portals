@@ -33,8 +33,7 @@ import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.commands.PortalCommand;
 import qouteall.imm_ptl.core.platform_specific.IPRegistry;
 import qouteall.imm_ptl.core.portal.Portal;
-import qouteall.imm_ptl.core.portal.PortalAnimation;
-import qouteall.imm_ptl.core.portal.PortalAnimation.Curve;
+import qouteall.imm_ptl.core.portal.animation.PortalAnimation;
 import qouteall.imm_ptl.core.portal.PortalLike;
 import qouteall.imm_ptl.core.portal.PortalManipulation;
 import qouteall.imm_ptl.core.portal.PortalPlaceholderBlock;
@@ -58,7 +57,7 @@ public class LinkedPortal extends GeneralBreakablePortal {
 	
 	public LinkedPortal(EntityType<?> entityType, Level world) {
 		super(entityType, world);
-		this.doRenderPlayer = false;
+		this.doRenderPlayer = true;
 		this.hasCrossPortalCollision = false;
 		this.controllerPos = null;
 		//this.animation = new PortalAnimation(Curve.sine, 0, false);

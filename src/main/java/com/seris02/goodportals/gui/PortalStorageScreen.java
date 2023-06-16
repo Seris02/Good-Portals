@@ -34,8 +34,6 @@ import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -91,7 +89,7 @@ public class PortalStorageScreen extends Screen implements StorageEmittee {
 	public Button isLightSource;
 
 	public PortalStorageScreen(LocalPlayer player, BlockPos pos, PortalControllerEntity controller) {
-		super(new TextComponent("Portal Controller Screen"));
+		super(Component.literal("Portal Controller Screen"));
 		this.player = player;
 		this.pos = pos;
 		this.controller = controller;
@@ -111,11 +109,11 @@ public class PortalStorageScreen extends Screen implements StorageEmittee {
 	}
 	
 	protected void init() {
-		TextComponent a = new TextComponent("+");
+		Component a = Component.literal("+");
 		int relX = (this.width - this.imageWidth) / 2;
 		int relY = (this.height - this.imageHeight) / 2;
 		int textwidth = 235;
-		this.addName = new EditBox(this.font, relX + (this.imageWidth - (textwidth + 25)) / 2, relY - 25, textwidth, 20, new TextComponent("Set Portal Name"));
+		this.addName = new EditBox(this.font, relX + (this.imageWidth - (textwidth + 25)) / 2, relY - 25, textwidth, 20, Component.literal("Set Portal Name"));
 		this.addName.setMaxLength(40);
 		this.addName.setSuggestion("Set Portal Name");
 		this.addName.setResponder(this::onEdited);
@@ -128,18 +126,18 @@ public class PortalStorageScreen extends Screen implements StorageEmittee {
 			GoodPortals.channel.send(PacketDistributor.SERVER.with(null), new PortalInfoPacket(pos, controller.getLevel().dimension(), this.addName.getValue(), ToDo.NEW_FRAME));
 		});
 		this.addRenderableWidget(addButton);
-		renameButton = new Button(this.addName.x + this.addName.getWidth() + 5, this.addName.y, 50, 20, new TextComponent("Rename"), (button) -> {
+		renameButton = new Button(this.addName.x + this.addName.getWidth() + 5, this.addName.y, 50, 20, Component.literal("Rename"), (button) -> {
 			unsure();
 			PortalUtils.sendToServer(new PortalInfoPacket(pos, controller.getLevel().dimension(), this.addName.getValue(), ToDo.RENAME));
 		});
-		deleteButton = new Button(this.renameButton.x + this.renameButton.getWidth() + 5, this.addName.y, 50, 20, new TextComponent("Delete"), (button) -> {
+		deleteButton = new Button(this.renameButton.x + this.renameButton.getWidth() + 5, this.addName.y, 50, 20, Component.literal("Delete"), (button) -> {
 			if (areyousure) {
 				unsure();
 				PortalUtils.sendToServer(PortalInfoPacket.removePortalPacket(mine.ID, true));
 			} else {
 				areyousure = true;
-				TextComponent d = new TextComponent("Sure?");
-				d.setStyle(d.getStyle().withColor(ChatFormatting.RED));
+				Component d = Component.literal("Sure?");
+				d.toFlatList(d.getStyle().withColor(ChatFormatting.RED));
 				deleteButton.setMessage(d);
 			}
 		});
@@ -147,12 +145,12 @@ public class PortalStorageScreen extends Screen implements StorageEmittee {
 		deleteButton.visible = false;
 		this.addRenderableWidget(renameButton);
 		this.addRenderableWidget(deleteButton);
-		scrollUp = new ScrollButton(relX + 5 + 210, (relY+7), 20, 20, new TextComponent(""), true, (button) -> {
+		scrollUp = new ScrollButton(relX + 5 + 210, (relY+7), 20, 20, Component.literal(""), true, (button) -> {
 			unsure();
 			scroll = Math.max(0, scroll - (hasShiftDown() ? 5 : 1));
 			refreshPortalButtons();
 		});
-		scrollDown = new ScrollButton(relX + 5 + 210, relY+207, 20, 20, new TextComponent(""), false, (button) -> {
+		scrollDown = new ScrollButton(relX + 5 + 210, relY+207, 20, 20, Component.literal(""), false, (button) -> {
 			unsure();
 			scroll = Math.min(scroll + (hasShiftDown() ? 5 : 1), data.size() - 11);
 			refreshPortalButtons();
@@ -161,27 +159,27 @@ public class PortalStorageScreen extends Screen implements StorageEmittee {
 		this.addRenderableWidget(scrollDown);
 		int startx = 5 + 210 + 25;
 		int widthrighthand = this.imageWidth - startx - 7;
-		playerChange = new Button(relX + startx, relY+7, widthrighthand, 20, new TextComponent("Lock to Player"), (button) -> {
+		playerChange = new Button(relX + startx, relY+7, widthrighthand, 20, Component.literal("Lock to Player"), (button) -> {
 			unsure();
 			PortalUtils.sendToServer(PortalInfoPacket.playerChangePacket(mine.ID, mine.specific_player.isBlank()));
 		});
-		Button axis1 = new Button(relX + startx, (relY+7 + 25), widthrighthand, 20, new TextComponent("Flip Portal"), (button) -> {
+		Button axis1 = new Button(relX + startx, (relY+7 + 25), widthrighthand, 20, Component.literal("Flip Portal"), (button) -> {
 			unsure();
 			PortalUtils.sendToServer(PortalInfoPacket.axisFlipPacket(pos, dimension, true));
 		});
-		Button axis2 = new Button(relX + startx, (relY+7 + 50), widthrighthand, 20, new TextComponent("Rotate Portal"), (button) -> {
+		Button axis2 = new Button(relX + startx, (relY+7 + 50), widthrighthand, 20, Component.literal("Rotate Portal"), (button) -> {
 			unsure();
 			PortalUtils.sendToServer(PortalInfoPacket.axisFlipPacket(pos, dimension, false));
 		});
-		renderplayers = new Button(relX + startx, (relY+7 + 50), widthrighthand, 20, new TextComponent("Renders Players"), (button) -> {
+		renderplayers = new Button(relX + startx, (relY+7 + 50), widthrighthand, 20, Component.literal("Renders Players"), (button) -> {
 			unsure();
 			PortalUtils.sendToServer(PortalInfoPacket.changeRenderSelfPacket(mine.ID, !mine.renderPlayers));
 		});
-		teleportself = new Button(relX + startx, (relY+7 + 50), widthrighthand, 20, new TextComponent("Teleports All"), (button) -> {
+		teleportself = new Button(relX + startx, (relY+7 + 50), widthrighthand, 20, Component.literal("Teleports All"), (button) -> {
 			unsure();
 			PortalUtils.sendToServer(PortalInfoPacket.onlyTeleportSelfPacket(mine.ID, !mine.onlyTeleportSelf));
 		});
-		isLightSource = new Button(relX + startx, (relY+7 + 50), widthrighthand, 20, new TextComponent("Lit Up"), (button) -> {
+		isLightSource = new Button(relX + startx, (relY+7 + 50), widthrighthand, 20, Component.literal("Lit Up"), (button) -> {
 			unsure();
 			PortalUtils.sendToServer(PortalInfoPacket.setIsLightSourcePacket(mine.ID, !mine.isLightSource));
 		});
@@ -197,8 +195,8 @@ public class PortalStorageScreen extends Screen implements StorageEmittee {
 	
 	private void unsure() {
 		areyousure = false;
-		TextComponent d = new TextComponent("Delete");
-		d.setStyle(Style.EMPTY);
+		Component d = Component.literal("Delete");
+		d.toFlatList();
 		deleteButton.setMessage(d);
 	}
 	
@@ -246,9 +244,9 @@ public class PortalStorageScreen extends Screen implements StorageEmittee {
 			if (cz > 209 - 5 - (inUse ? 20 : 0)) {
 				sd = font.substrByWidth(FormattedText.of(d.name), 209 - 5 - (d.inUse.isBlank() ? 0 : 20) - font.width("...")).getString() + "...";
 			}
-			TextComponent be = new TextComponent(sd);
+			Component be = Component.literal(sd);
 			TextColor ae = TextColor.fromLegacyFormat(d.inUse.length() > 0 ? (isConnected ? (d.canPlayerAccess(player) ? ChatFormatting.GREEN : ChatFormatting.YELLOW) : ChatFormatting.RED) : ChatFormatting.WHITE);
-			be.setStyle(be.getStyle().withColor(ae));
+			be.toFlatList(be.getStyle().withColor(ae));
 			Button b = new Button(relX + 5, (relY+7)+20*posy, 209 - (d.inUse.isBlank() ? 0 : 19), 20, be, (button) -> {
 				PortalUtils.sendToServer(new PortalInfoPacket(pos, controller.getLevel().dimension(), d.ID, ToDo.CONNECT));
 			});
@@ -256,14 +254,14 @@ public class PortalStorageScreen extends Screen implements StorageEmittee {
 			this.addRenderableWidget(b);
 			toClear.add(b);
 			if (!d.inUse.isBlank()) {
-				TextComponent bp = new TextComponent("-");
-				bp.setStyle(be.getStyle().withColor(TextColor.fromLegacyFormat(ChatFormatting.RED)));
+				Component bp = Component.literal("-");
+				bp.toFlatList(be.getStyle().withColor(TextColor.fromLegacyFormat(ChatFormatting.RED)));
 				Button da = new Button(b.x + b.getWidth() - 2, b.y, 20, 20, bp, (bs) -> {
 					unsure();
 					PortalUtils.sendToServer(PortalInfoPacket.removePortalPacket(d.ID, false));
 				});
 				da.visible = false;
-				Button c = new Button(b.x + b.getWidth() - 2, b.y, 20, 20, new TextComponent("-"), (button) -> {
+				Button c = new Button(b.x + b.getWidth() - 2, b.y, 20, 20, Component.literal("-"), (button) -> {
 					unsure();
 					da.visible = true;
 					button.visible = false;
@@ -281,14 +279,14 @@ public class PortalStorageScreen extends Screen implements StorageEmittee {
 		playerChange.visible = mine != null;
 		if (mine != null) {
 			teleportself.visible = teleportself.visible && !mine.specific_player.isBlank();
-			this.playerChange.setMessage(new TextComponent(mine.specific_player.isBlank() ? "Lock To Myself" : "Unlock Frame"));
-			this.teleportself.setMessage(new TextComponent(mine.onlyTeleportSelf ? "Teleports Me" : "Teleports All"));
-			TextComponent e = new TextComponent("Renders Players");
+			this.playerChange.setMessage(Component.literal(mine.specific_player.isBlank() ? "Lock To Myself" : "Unlock Frame"));
+			this.teleportself.setMessage(Component.literal(mine.onlyTeleportSelf ? "Teleports Me" : "Teleports All"));
+			Component e = Component.literal("Renders Players");
 			if (!mine.renderPlayers) {
-				e.setStyle(Style.EMPTY.withStrikethrough(true));
+				e.toFlatList(Style.EMPTY.withStrikethrough(true));
 			}
 			this.renderplayers.setMessage(e);
-			this.isLightSource.setMessage(new TextComponent(mine.isLightSource ? "Lit up" : "Unlit"));
+			this.isLightSource.setMessage(Component.literal(mine.isLightSource ? "Lit up" : "Unlit"));
 		}
 		int h = 0;
 		int relY = (this.height - this.imageHeight) / 2;

@@ -15,8 +15,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.model.data.IModelData;
-import net.minecraftforge.client.model.data.ModelDataMap;
+import net.minecraftforge.client.model.data.ModelData;
 
 public class PortalBlockEntity extends BlockEntity {
 	
@@ -33,8 +32,8 @@ public class PortalBlockEntity extends BlockEntity {
 	}
 	
 	@Override
-	public IModelData getModelData() {
-		return new ModelDataMap.Builder().withInitial(PortalBakedModel.CAMO_STATE, Blocks.AIR.defaultBlockState()).build();
+	public ModelData getModelData() {
+		return ModelData.builder().with(PortalBakedModel.CAMO_STATE, Blocks.AIR.defaultBlockState()).build();
 	}
 	
 	@Override

@@ -23,7 +23,6 @@ import net.minecraft.world.level.material.Material;
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.forge.event.lifecycle.GatherDataEvent;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -31,8 +30,8 @@ import net.minecraftforge.registries.RegistryObject;
 public class PortalContent {
 	public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, GoodPortals.MODID);
 	public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, GoodPortals.MODID);
-	public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITIES, GoodPortals.MODID);
-	public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(ForgeRegistries.ENTITIES, GoodPortals.MODID);
+	public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, GoodPortals.MODID);
+	public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, GoodPortals.MODID);
 	
 	public static final RegistryObject<BlockEntityType<PortalBlockEntity>> PORTAL_ENTITY = BLOCK_ENTITIES.register("portal_entity", () -> BlockEntityType.Builder.of(PortalBlockEntity::new, PortalContent.PORTAL_BLOCK.get()).build(null));
 	public static final RegistryObject<BlockEntityType<PortalControllerEntity>> PORTAL_CONTROLLER_ENTITY = BLOCK_ENTITIES.register("portal_controller_entity", () -> BlockEntityType.Builder.of(PortalControllerEntity::new, PortalContent.PORTAL_CONTROLLER.get()).build(null));

@@ -31,20 +31,26 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.model.data.IDynamicBakedModel;
-import net.minecraftforge.client.model.data.IModelData;
+import net.minecraftforge.client.model.IDynamicBakedModel;
+import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.ModelData.Builder;
 import net.minecraftforge.client.model.data.ModelProperty;
 
 public class PortalBakedModel implements IDynamicBakedModel {
@@ -80,8 +86,8 @@ public class PortalBakedModel implements IDynamicBakedModel {
 	}
 
 	@Override
-	public TextureAtlasSprite getParticleIcon(IModelData extraData) {
-		BlockState camo = extraData.getData(CAMO_STATE);
+	public TextureAtlasSprite getParticleIcon(ModelData extraData) {
+		BlockState camo = extraData.get(CAMO_STATE);
 		if (camo != null) {
 			Block block = camo.getBlock();
 			if (block != Blocks.AIR) {
@@ -94,20 +100,20 @@ public class PortalBakedModel implements IDynamicBakedModel {
 		return oldModel.getParticleIcon(extraData);
 	}
 	
-	public IModelData getModelData(BlockAndTintGetter level, BlockPos pos, BlockState state, IModelData modelData) {
+	public ModelData getModelData(BlockAndTintGetter level, BlockPos pos, BlockState state, ModelData modelData) {
 		BlockEntity blockEntity = level.getBlockEntity(pos);
 
 		if (blockEntity != null) {
 			if (blockEntity.getBlockState().getBlock() instanceof PortalBlock portal) {
 				Optional<BlockState> camoState = portal.getCamoState(level, pos);
 				if (camoState.isPresent()) {
-					modelData.setData(CAMO_STATE, camoState.get());
+					modelData = modelData.builder().with(CAMO_STATE, camoState.get()).build();
 					return modelData;
 				}
 			}
 		}
 
-		modelData.setData(CAMO_STATE, Blocks.AIR.defaultBlockState());
+		modelData = modelData.builder().with(CAMO_STATE, Blocks.AIR.defaultBlockState()).build();
 		return modelData;
 	}
 
@@ -118,31 +124,22 @@ public class PortalBakedModel implements IDynamicBakedModel {
 	}
 
 	@Override
-	public List<BakedQuad> getQuads(BlockState state, Direction side, Random rand, IModelData extraData) {
-		BlockState camo = extraData.getData(CAMO_STATE);
+	public List<BakedQuad> getQuads(BlockState state, Direction side, RandomSource rand, ModelData extraData, RenderType renderType) {
+		BlockState camo = extraData.get(CAMO_STATE);
 		if (camo != null) {
 			Block block = camo.getBlock();
 			if (block != Blocks.AIR) {
 				BakedModel model = Minecraft.getInstance().getBlockRenderer().getBlockModel(camo);
 				if (model != null && model != this) {
-					return model.getQuads(camo, side, rand, extraData);
+					return model.getQuads(camo, side, rand, extraData, renderType);
 				}
 			}
 		}
-		return oldModel.getQuads(state, side, rand, extraData);
+		return oldModel.getQuads(state, side, rand, extraData, renderType);
 	}
 
 	@Override
 	public TextureAtlasSprite getParticleIcon() {
 		return oldModel.getParticleIcon();
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-
 }

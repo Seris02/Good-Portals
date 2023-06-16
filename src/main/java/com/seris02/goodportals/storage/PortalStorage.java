@@ -234,7 +234,7 @@ public class PortalStorage extends SavedData {
 	}
 	
 	public void setRenderSelf(String ID, ServerPlayer player, boolean renderPlayers) {
-		this.setBooleanVarAndUpdate(ID, player, Var.RENDER_PLAYER, false, (e) -> e.renderPlayers = renderPlayers, (d, p) -> p.setdoRenderPlayer(renderPlayers));
+		this.setBooleanVarAndUpdate(ID, player, Var.RENDER_PLAYER, true, (e) -> e.renderPlayers = renderPlayers, (d, p) -> p.setdoRenderPlayer(renderPlayers));
 	}
 	
 	public void setOnlyTeleportSelf(String ID, ServerPlayer player, boolean teleportSelf) {
